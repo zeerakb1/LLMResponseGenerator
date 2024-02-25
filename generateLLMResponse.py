@@ -5,7 +5,7 @@ import time
 def run_ollama(text):
     # Run the ollama command and capture the output
     try:
-        result = subprocess.run(['ollama', 'run', 'mistral', f'"{text}"'], capture_output=True, text=True, timeout=70000)
+        result = subprocess.run(['ollama', 'run', 'mistral', text.encode("utf-8")], capture_output=True, text=True, timeout=60000)
         return result.stdout.strip()
     except subprocess.TimeoutExpired:
         return "Response timed out"
@@ -42,21 +42,27 @@ def main():
     ws.cell(row=1, column=response_col_index).value = 'Mistral Response'
 
     # Run the ollama command for each combined text and store the response
-    for row in ws.iter_rows(min_row=2, max_row=105):
+    c = 1
+    for row in ws.iter_rows(min_row=2, max_row=202):
     # for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
         title = row[title_col_index - 1].value or ""
         body = row[body_col_index - 1].value or ""
         combined_text = "Following is a question posted on data science stack exchange, generate a helpful response that is less than 200 words: " + title + " " + body
         # print(type(combined_text))
         # break
-        print("Running the model...", row)
+        print("Running the model..." , c)
+        c+=1
         response = run_ollama(combined_text)
         ws.cell(row=row[0].row, column=response_col_index).value = response
         time.sleep(1)  # Wait for a second before making the next request
-        # break
+        with open("file.txt" , "a") as file:
+            file.write(combined_text)
+            file.write("\n------\n")
+            file.write(response)
+            file.write("\n*********\n")
+        wb.save('Updated_file_Mistral.xlsx')
 
     # Save the updated workbook
-    wb.save('Updated_file_Mistral.xlsx')
 
 if __name__ == '__main__':
     main()
